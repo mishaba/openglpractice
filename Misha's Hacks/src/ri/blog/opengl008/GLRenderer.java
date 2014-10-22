@@ -20,8 +20,13 @@ import android.opengl.GLSurfaceView.Renderer;
 import android.opengl.Matrix;
 import android.view.MotionEvent;
 
-public class GLRenderer implements Renderer {
+import com.airhockey.android.util.LoggerConfig;
 
+import android.util.Log;
+
+
+public class GLRenderer implements Renderer {
+    private static final String TAG = "GLRenderer";
 	// Our matrices
 	private final float[] mtrxProjection = new float[16];
 	private final float[] mtrxView = new float[16];
@@ -34,7 +39,7 @@ public class GLRenderer implements Renderer {
 	public FloatBuffer vertexBuffer;
 	public ShortBuffer drawListBuffer;
 	public FloatBuffer uvBuffer;
-	public Sprite sprite;
+	
 	public TextManager tm;
 	// Our screenresolution
 	float	mScreenWidth = 1280;
@@ -49,6 +54,10 @@ public class GLRenderer implements Renderer {
 	Context mContext;
 	long mLastTime;
 	int mProgram;
+	
+	// Text movement hack
+	float mTextX = 10f;
+	float mTextY = 10f;
 	
 	public GLRenderer(Context c)
 	{
@@ -215,7 +224,7 @@ public class GLRenderer implements Renderer {
 		tm.setUniformscale(ssu);
 		
 		// Create our new textobject
-		TextObject txt = new TextObject("hello world", 10f, 10f);
+		TextObject txt = new TextObject("hello world", mTextX, mTextY);
 		
 		// Add it to our manager
 		tm.addText(txt);
@@ -243,31 +252,41 @@ public class GLRenderer implements Renderer {
 	
 	public void processTouchEvent(MotionEvent event)
 	{
-		// Get the half of screen value
-		int screenhalf = (int) (mScreenWidth / 2);
-		int screenheightpart = (int) (mScreenHeight / 3);
-		if(event.getX()<screenhalf)
-		{
-			// Left screen touch
-			if(event.getY() < screenheightpart)
-				sprite.scale(-0.01f);
-			else if(event.getY() < (screenheightpart*2))
-				sprite.translate(-10f*ssu, -10f*ssu);
-			else
-				sprite.rotate(0.01f);
-		}
-		else
-		{
-			// Right screen touch
-			if(event.getY() < screenheightpart)
-				sprite.scale(0.01f);
-			else if(event.getY() < (screenheightpart*2))
-				sprite.translate(10f*ssu, 10f*ssu);
-			else
-				sprite.rotate(-0.01f);
-		}
+	    // Get the half of screen value
+	    int screenhalf = (int) (mScreenWidth / 2);
+	    int screenheightpart = (int) (mScreenHeight / 3);
+	    if(event.getX()<screenhalf) 	{
+	        Log.w(TAG,"Left ");
+	        mTextX += 10;
+	    }
+	    else {
+	        Log.w(TAG,"Right ");
+	        mTextX -= 10;
+	    }
+	    // Left screen touch
+	    if(event.getY() < screenheightpart)  {
+	        Log.w(TAG," Bottom");
+	        mTextY += 10;
+	    }
+
+	    else if(event.getY() < (screenheightpart*2)) {
+	        Log.w(TAG," Middle");
+	    }
+	    else {
+	        Log.w(TAG," Top");
+	        mTextY -= 10;
+	    }
+
+	    if (mTextX < 0) { // clamp min
+	        mTextX = 0;
+	    }
+	    if (mTextY < 0) { // clamp min
+	        mTextY = 0;
+	    }
+	    SetupText();
 	}
-	
+
+	/*
 	public void UpdateSprite()
 	{
 		// Get new transformed vertices
@@ -280,7 +299,7 @@ public class GLRenderer implements Renderer {
 		vertexBuffer.put(vertices);
 		vertexBuffer.position(0);
 	}
-	
+	*/
 	
 	public void SetupImage()
 	{
