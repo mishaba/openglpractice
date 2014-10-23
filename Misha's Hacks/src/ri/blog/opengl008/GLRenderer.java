@@ -249,13 +249,13 @@ public class GLRenderer implements Renderer {
     	else
     		ssu = ssx;
 	}
+	public void handleTouchPress(float eventX, float eventY) {
+	    
 	
-	public void processTouchEvent(MotionEvent event)
-	{
 	    // Get the half of screen value
 	    int screenhalf = (int) (mScreenWidth / 2);
 	    int screenheightpart = (int) (mScreenHeight / 3);
-	    if(event.getX()<screenhalf) 	{
+	    if(eventX<screenhalf) 	{
 	        Log.w(TAG,"Left ");
 	        mTextX += 10;
 	    }
@@ -264,12 +264,12 @@ public class GLRenderer implements Renderer {
 	        mTextX -= 10;
 	    }
 	    // Left screen touch
-	    if(event.getY() < screenheightpart)  {
+	    if(eventY < screenheightpart)  {
 	        Log.w(TAG," Bottom");
 	        mTextY += 10;
 	    }
 
-	    else if(event.getY() < (screenheightpart*2)) {
+	    else if(eventY < (screenheightpart*2)) {
 	        Log.w(TAG," Middle");
 	    }
 	    else {
