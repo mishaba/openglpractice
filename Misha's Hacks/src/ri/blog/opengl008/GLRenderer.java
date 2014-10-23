@@ -21,6 +21,7 @@ import android.opengl.Matrix;
 import android.view.MotionEvent;
 
 import com.airhockey.android.util.LoggerConfig;
+import com.airhockey.android.util.TextResourceReader;
 
 import android.util.Log;
 
@@ -191,8 +192,11 @@ public class GLRenderer implements Renderer {
 	    GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 	    
 	    // Create the shaders, images
-	    int vertexShader = riGraphicTools.loadShader(GLES20.GL_VERTEX_SHADER, riGraphicTools.vs_Image);
-	    int fragmentShader = riGraphicTools.loadShader(GLES20.GL_FRAGMENT_SHADER, riGraphicTools.fs_Image);
+	    int vertexShader = riGraphicTools.loadShader(GLES20.GL_VERTEX_SHADER, 
+	        TextResourceReader.readTextFileFromResource(mContext, R.raw.image_vertex_shader) 
+	      );
+	    int fragmentShader = riGraphicTools.loadShader(GLES20.GL_FRAGMENT_SHADER, 
+	            TextResourceReader.readTextFileFromResource(mContext, R.raw.image_fragment_shader) );
 
 	    riGraphicTools.sp_Image = GLES20.glCreateProgram();             // create empty OpenGL ES Program
 	    GLES20.glAttachShader(riGraphicTools.sp_Image, vertexShader);   // add the vertex shader to program
@@ -200,8 +204,16 @@ public class GLRenderer implements Renderer {
 	    GLES20.glLinkProgram(riGraphicTools.sp_Image);                  // creates OpenGL ES program executables
 	    
 	    // Text shader
-	    int vshadert = riGraphicTools.loadShader(GLES20.GL_VERTEX_SHADER, riGraphicTools.vs_Text);
-	    int fshadert = riGraphicTools.loadShader(GLES20.GL_FRAGMENT_SHADER, riGraphicTools.fs_Text);
+	    
+	    // Convert to use resources 
+	    
+	    int vshadert = riGraphicTools.loadShader(GLES20.GL_VERTEX_SHADER, 
+	        TextResourceReader.readTextFileFromResource(mContext, R.raw.text2d_vertex_shader)    
+	        );
+	    int fshadert = riGraphicTools.loadShader(GLES20.GL_FRAGMENT_SHADER,  
+	        TextResourceReader.readTextFileFromResource(mContext, R.raw.text2d_fragment_shader)    
+	        );
+	        
 	    
 	    riGraphicTools.sp_Text = GLES20.glCreateProgram();
 	    GLES20.glAttachShader(riGraphicTools.sp_Text, vshadert);

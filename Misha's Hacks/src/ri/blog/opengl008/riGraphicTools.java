@@ -34,6 +34,7 @@ public class riGraphicTools {
 	 * No additional effects.
 	 * 
 	 */
+	/*
 	public static final String vs_Image =
 		"uniform mat4 uMVPMatrix;" +
 		"attribute vec4 vPosition;" +
@@ -51,13 +52,16 @@ public class riGraphicTools {
 	    "void main() {" +
 	    "  gl_FragColor = texture2D( s_texture, v_texCoord );" +
 	    "}"; 
-	
+	*/
+
 	/* SHADER Text
 	 * 
 	 * This shader is for rendering 2D text textures straight from a texture
 	 * Color and alpha blended.
 	 * 
 	 */
+
+	/*
 	public static final String vs_Text =
 		"uniform mat4 uMVPMatrix;" +
 		"attribute vec4 vPosition;" +
@@ -70,6 +74,8 @@ public class riGraphicTools {
 	    "  v_texCoord = a_texCoord;" +
 	    "  v_Color = a_Color;" + 
 	    "}";
+
+
 	public static final String fs_Text =
 	    "precision mediump float;" +
 	    "varying vec4 v_Color;" +
@@ -80,6 +86,7 @@ public class riGraphicTools {
 	    "  gl_FragColor.rgb *= v_Color.a;" +
 	    "}";  
 	
+	*/
 	
 	
 	public static int loadShader(int type, String shaderCode){
