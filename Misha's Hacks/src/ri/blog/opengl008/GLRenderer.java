@@ -22,6 +22,7 @@ import android.view.MotionEvent;
 
 import com.airhockey.android.util.LoggerConfig;
 import com.airhockey.android.util.TextResourceReader;
+import com.airhockey.android.programs.TextureShaderProgram;
 
 import android.util.Log;
 
@@ -59,6 +60,10 @@ public class GLRenderer implements Renderer {
 	// Text movement hack
 	float mTextX = 10f;
 	float mTextY = 10f;
+	
+	// Programs and such
+	TextureShaderProgram mImageProgram;
+	TextureShaderProgram mText2DProgram;
 	
 	public GLRenderer(Context c)
 	{
@@ -105,9 +110,10 @@ public class GLRenderer implements Renderer {
 	}
 	
 	private void Render(float[] m) {
-		// Set our shaderprogram to image shader
-		GLES20.glUseProgram(riGraphicTools.sp_Image);
 		
+		// GLES20.glUseProgram(riGraphicTools.sp_Image);
+		 mImageProgram.useProgram();
+		 
 		// clear Screen and Depth Buffer, we have set the clear color as black.
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -190,7 +196,8 @@ public class GLRenderer implements Renderer {
 		
 		GLES20.glEnable(GLES20.GL_BLEND);
 	    GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-	    
+	 
+	    /*
 	    // Create the shaders, images
 	    int vertexShader = riGraphicTools.loadShader(GLES20.GL_VERTEX_SHADER, 
 	        TextResourceReader.readTextFileFromResource(mContext, R.raw.image_vertex_shader) 
@@ -202,6 +209,10 @@ public class GLRenderer implements Renderer {
 	    GLES20.glAttachShader(riGraphicTools.sp_Image, vertexShader);   // add the vertex shader to program
 	    GLES20.glAttachShader(riGraphicTools.sp_Image, fragmentShader); // add the fragment shader to program
 	    GLES20.glLinkProgram(riGraphicTools.sp_Image);                  // creates OpenGL ES program executables
+	    */
+	    
+	    mImageProgram = new TextureShaderProgram(mContext, R.raw.image_vertex_shader, R.raw.image_fragment_shader);
+	    riGraphicTools.sp_Image = mImageProgram.program;
 	    
 	    // Text shader
 	    

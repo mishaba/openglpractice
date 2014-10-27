@@ -44,6 +44,19 @@ public class TextureShaderProgram extends ShaderProgram {
         aTextureCoordinatesLocation = glGetAttribLocation(program, A_TEXTURE_COORDINATES);
     }
 
+    public TextureShaderProgram(Context context, int idVertex, int idFragment) {
+        super(context, idVertex, idFragment);
+    
+
+        // Retrieve uniform locations for the shader program.
+        uMatrixLocation = glGetUniformLocation(program, U_MATRIX);
+        uTextureUnitLocation = glGetUniformLocation(program,
+            U_TEXTURE_UNIT);
+        
+        // Retrieve attribute locations for the shader program.
+        aPositionLocation = glGetAttribLocation(program, A_POSITION);
+        aTextureCoordinatesLocation = glGetAttribLocation(program, A_TEXTURE_COORDINATES);
+    }
     public void setUniforms(float[] matrix, int textureId) {
         // Pass the matrix into the shader program.
         glUniformMatrix4fv(uMatrixLocation, 1, false, matrix, 0);

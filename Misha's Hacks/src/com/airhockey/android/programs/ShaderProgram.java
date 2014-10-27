@@ -26,7 +26,7 @@ abstract class ShaderProgram {
     protected static final String A_TEXTURE_COORDINATES = "a_TextureCoordinates";
 
     // Shader program
-    protected final int program;
+	/* protected */ public  final int program; // Expose for now; TODO make private
 
     protected ShaderProgram(Context context, int vertexShaderResourceId,
         int fragmentShaderResourceId) {
