@@ -7,6 +7,8 @@ import java.nio.ShortBuffer;
 import java.util.Iterator;
 import java.util.Vector;
 
+import com.airhockey.android.programs.TextureShaderProgram;
+
 import android.opengl.GLES20;
 
 public class TextManager {
@@ -30,9 +32,12 @@ public class TextManager {
 	private int index_uvs;
 	private int index_colors;
 
-	private int texturenr;
+	// Index of the texture unit to use for rendering
+	private int textureUnitIndex;
 	
 	private float uniformscale;
+	
+	public TextureShaderProgram mProgram;
 	
 	public static int[] l_size = {36,29,30,34,25,25,34,33,
 								   11,20,31,24,48,35,39,29,
@@ -45,7 +50,8 @@ public class TextManager {
 	
 	public Vector<TextObject> txtcollection;
 
-	public TextManager()
+
+	public TextManager(TextureShaderProgram program)
 	{
 		// Create our container
 		txtcollection = new Vector<TextObject>();
@@ -57,7 +63,8 @@ public class TextManager {
 		indices = new short[10];
 		
 		// init as 0 as default
-		texturenr = 0;
+		textureUnitIndex = 0;
+		mProgram = program;
 	}
 	
 	public void addText(TextObject obj)
@@ -66,9 +73,15 @@ public class TextManager {
 		txtcollection.add(obj);
 	}
 	
-	public void setTextureID(int val)
+	public void updateText(TextObject obj)
 	{
-		texturenr = val;
+	    txtcollection = new Vector<TextObject>();
+	    txtcollection.add(obj);
+	}
+
+	public void setTextureUnitIndex(int val)
+	{
+		textureUnitIndex = val;
 	}
 	
 	
@@ -144,27 +157,24 @@ public class TextManager {
 	
 	public void PrepareDraw()
 	{
-		// Setup all the arrays
-		PrepareDrawInfo();
-		
-		// Using the iterator protects for problems with concurrency
-		for( Iterator< TextObject > it = txtcollection.iterator(); it.hasNext() ; )
-	    {
-	    	TextObject txt = it.next();
-	    	if(txt!=null)
-			{
-		    	if(!(txt.text==null))
-				{
-					convertTextToTriangleInfo(txt);
-				}
-			}
+	    // Setup all the arrays
+	    PrepareDrawInfo();
+
+	    // Using the iterator protects for problems with concurrency
+	    for( Iterator< TextObject > it = txtcollection.iterator(); it.hasNext() ; ) 	    {
+	        TextObject txt = it.next();
+	        if(txt!=null) 			{
+	            if(!(txt.text==null)) 				{
+	                convertTextToTriangleInfo(txt);
+	            }
+	        }
 	    }
 	}
 	
 	public void Draw(float[] m)
 	{
 		// Set the correct shader for our grid object.
-		GLES20.glUseProgram(riGraphicTools.sp_Text);
+		GLES20.glUseProgram(mProgram.program);
 		
 		// The vertex buffer.
 		ByteBuffer bb = ByteBuffer.allocateDirect(vecs.length * 4);
@@ -195,7 +205,7 @@ public class TextManager {
 		drawListBuffer.position(0);
 		
 		// get handle to vertex shader's vPosition member
-	    int mPositionHandle = GLES20.glGetAttribLocation(riGraphicTools.sp_Text, "vPosition");
+	    int mPositionHandle = GLES20.glGetAttribLocation(mProgram.program, "vPosition");
 	    
 	    // Enable a handle to the triangle vertices
 	    GLES20.glEnableVertexAttribArray(mPositionHandle);
@@ -205,7 +215,7 @@ public class TextManager {
 	                                 GLES20.GL_FLOAT, false,
 	                                 0, vertexBuffer);
 	    
-	    int mTexCoordLoc = GLES20.glGetAttribLocation(riGraphicTools.sp_Text, "a_texCoord" );
+	    int mTexCoordLoc = GLES20.glGetAttribLocation(mProgram.program, "a_texCoord" );
 	    
 	    // Prepare the texturecoordinates
 	    GLES20.glVertexAttribPointer ( mTexCoordLoc, 2, GLES20.GL_FLOAT,
@@ -215,7 +225,7 @@ public class TextManager {
 	    GLES20.glEnableVertexAttribArray ( mPositionHandle );
         GLES20.glEnableVertexAttribArray ( mTexCoordLoc );
 
-        int mColorHandle = GLES20.glGetAttribLocation(riGraphicTools.sp_Text, "a_Color");
+        int mColorHandle = GLES20.glGetAttribLocation(mProgram.program, "a_Color");
 
 	    // Enable a handle to the triangle vertices
 	    GLES20.glEnableVertexAttribArray(mColorHandle);
@@ -226,15 +236,15 @@ public class TextManager {
 	                                 0, colorBuffer);
 
 	    // get handle to shape's transformation matrix
-        int mtrxhandle = GLES20.glGetUniformLocation(riGraphicTools.sp_Text, "uMVPMatrix");
+        int mtrxhandle = GLES20.glGetUniformLocation(mProgram.program, "uMVPMatrix");
         
     	// Apply the projection and view transformation
         GLES20.glUniformMatrix4fv(mtrxhandle, 1, false, m, 0);
         
-        int mSamplerLoc = GLES20.glGetUniformLocation (riGraphicTools.sp_Text, "s_texture" );
+        int mSamplerLoc = GLES20.glGetUniformLocation (mProgram.program, "s_texture" );
         
         // Set the sampler texture unit to our selected id
-	    GLES20.glUniform1i ( mSamplerLoc, texturenr);
+	    GLES20.glUniform1i ( mSamplerLoc, textureUnitIndex); // THIS WAS A HIDDEN BUG! THis refers to the texture UNIT index
 
         // Draw the triangle
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, indices.length, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);

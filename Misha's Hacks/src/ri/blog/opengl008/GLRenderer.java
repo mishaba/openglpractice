@@ -24,6 +24,16 @@ import com.airhockey.android.util.LoggerConfig;
 import com.airhockey.android.util.TextResourceReader;
 import com.airhockey.android.programs.TextureShaderProgram;
 
+import static android.opengl.GLES20.GL_TEXTURE0;
+import static android.opengl.GLES20.GL_TEXTURE1;
+import static android.opengl.GLES20.GL_TEXTURE_2D;
+import static android.opengl.GLES20.glActiveTexture;
+import static android.opengl.GLES20.glBindTexture;
+import static android.opengl.GLES20.glGetAttribLocation;
+import static android.opengl.GLES20.glGetUniformLocation;
+import static android.opengl.GLES20.glUniform1i;
+import static android.opengl.GLES20.glUniformMatrix4fv;
+
 import android.util.Log;
 
 
@@ -65,6 +75,7 @@ public class GLRenderer implements Renderer {
 	TextureShaderProgram mImageProgram;
 	TextureShaderProgram mText2DProgram;
 	
+   
 	public GLRenderer(Context c)
 	{
 		mContext = c;
@@ -111,7 +122,7 @@ public class GLRenderer implements Renderer {
 	
 	private void Render(float[] m) {
 		
-		// GLES20.glUseProgram(riGraphicTools.sp_Image);
+		// GLES20.glUseProgram(mImageProgram.program);
 		 mImageProgram.useProgram();
 		 
 		// clear Screen and Depth Buffer, we have set the clear color as black.
@@ -119,21 +130,21 @@ public class GLRenderer implements Renderer {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         
         // get handle to vertex shader's vPosition member and add vertices
-	    int mPositionHandle = GLES20.glGetAttribLocation(riGraphicTools.sp_Image, "vPosition");
+	    int mPositionHandle = GLES20.glGetAttribLocation(mImageProgram.program, "vPosition");
 	    GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer);
 	    GLES20.glEnableVertexAttribArray(mPositionHandle);
 	    
 	    // Get handle to texture coordinates location and load the texture uvs
-	    int mTexCoordLoc = GLES20.glGetAttribLocation(riGraphicTools.sp_Image, "a_texCoord" );
+	    int mTexCoordLoc = GLES20.glGetAttribLocation(mImageProgram.program, "a_texCoord" );
 	    GLES20.glVertexAttribPointer ( mTexCoordLoc, 2, GLES20.GL_FLOAT, false, 0, uvBuffer);
 	    GLES20.glEnableVertexAttribArray ( mTexCoordLoc );
 	    
 	    // Get handle to shape's transformation matrix and add our matrix
-        int mtrxhandle = GLES20.glGetUniformLocation(riGraphicTools.sp_Image, "uMVPMatrix");
+        int mtrxhandle = GLES20.glGetUniformLocation(mImageProgram.program, "uMVPMatrix");
         GLES20.glUniformMatrix4fv(mtrxhandle, 1, false, m, 0);
         
         // Get handle to textures locations
-        int mSamplerLoc = GLES20.glGetUniformLocation (riGraphicTools.sp_Image, "s_texture" );
+        int mSamplerLoc = GLES20.glGetUniformLocation (mImageProgram.program, "s_texture" );
         
         // Set the sampler texture unit to 0, where we have saved the texture.
         GLES20.glUniform1i ( mSamplerLoc, 0);
@@ -182,72 +193,80 @@ public class GLRenderer implements Renderer {
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 		
-		// Setup our scaling system
-		SetupScaling();
-		// Create the triangles
-		SetupTriangle();
-		// Create the image information
-		SetupImage();
-		// Create our texts
-		SetupText();
-		
-		// Set the clear color to black
-		GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1);	
-		
-		GLES20.glEnable(GLES20.GL_BLEND);
-	    GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-	 
-	    /*
-	    // Create the shaders, images
-	    int vertexShader = riGraphicTools.loadShader(GLES20.GL_VERTEX_SHADER, 
-	        TextResourceReader.readTextFileFromResource(mContext, R.raw.image_vertex_shader) 
-	      );
-	    int fragmentShader = riGraphicTools.loadShader(GLES20.GL_FRAGMENT_SHADER, 
-	            TextResourceReader.readTextFileFromResource(mContext, R.raw.image_fragment_shader) );
 
-	    riGraphicTools.sp_Image = GLES20.glCreateProgram();             // create empty OpenGL ES Program
-	    GLES20.glAttachShader(riGraphicTools.sp_Image, vertexShader);   // add the vertex shader to program
-	    GLES20.glAttachShader(riGraphicTools.sp_Image, fragmentShader); // add the fragment shader to program
-	    GLES20.glLinkProgram(riGraphicTools.sp_Image);                  // creates OpenGL ES program executables
-	    */
-	    
-	    mImageProgram = new TextureShaderProgram(mContext, R.raw.image_vertex_shader, R.raw.image_fragment_shader);
-	    riGraphicTools.sp_Image = mImageProgram.program;
-	    
-	    // Text shader
-	    
-	    // Convert to use resources 
-	    
-	    int vshadert = riGraphicTools.loadShader(GLES20.GL_VERTEX_SHADER, 
-	        TextResourceReader.readTextFileFromResource(mContext, R.raw.text2d_vertex_shader)    
-	        );
-	    int fshadert = riGraphicTools.loadShader(GLES20.GL_FRAGMENT_SHADER,  
-	        TextResourceReader.readTextFileFromResource(mContext, R.raw.text2d_fragment_shader)    
-	        );
-	        
-	    
-	    riGraphicTools.sp_Text = GLES20.glCreateProgram();
-	    GLES20.glAttachShader(riGraphicTools.sp_Text, vshadert);
-	    GLES20.glAttachShader(riGraphicTools.sp_Text, fshadert); 		// add the fragment shader to program
-	    GLES20.glLinkProgram(riGraphicTools.sp_Text);                  // creates OpenGL ES program executables
-	    
+	    mImageProgram = new TextureShaderProgram(mContext,
+	        R.raw.image_vertex_shader, R.raw.image_fragment_shader,
+	        GL_TEXTURE0);
+
+	    mText2DProgram = new TextureShaderProgram(mContext, R.raw.text2d_vertex_shader,
+	        R.raw.text2d_fragment_shader,
+	        GL_TEXTURE1);
+
 	    // Set our shader programm
-		GLES20.glUseProgram(riGraphicTools.sp_Image);
+		GLES20.glUseProgram(mImageProgram.program);
+		
+		  // Setup our scaling system
+        SetupScaling();
+        // Create the triangles
+        SetupTriangle();
+        // Create the image information
+        SetupImage();
+        // Generate Textures, if more needed, alter these numbers.
+        int[] textureObjectIds = new int[2];
+        GLES20.glGenTextures(2, textureObjectIds, 0);
+        
+        // Retrieve our image from resources.
+        int id = mContext.getResources().getIdentifier("drawable/textureatlas", null, mContext.getPackageName());
+        
+        // Temporary create a bitmap
+        Bitmap bmp = BitmapFactory.decodeResource(mContext.getResources(), id);
+        
+        // Bind texture to texturename
+        GLES20.glActiveTexture(mImageProgram.mTextureUnitEnum);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureObjectIds[0]);
+        
+        // Set filtering
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        
+        // Load the bitmap into the bound texture.
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
+        
+        // We are done using the bitmap so we should recycle it.
+        bmp.recycle();
+        
+        // Again for the text texture
+        id = mContext.getResources().getIdentifier("drawable/font", null, mContext.getPackageName());
+        bmp = BitmapFactory.decodeResource(mContext.getResources(), id);
+        GLES20.glActiveTexture(mText2DProgram.mTextureUnitEnum); // Uses 2nd texture unit
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureObjectIds[1]);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
+        bmp.recycle();
+        
+        // Create our texts
+        SetupText(mText2DProgram); 
+        Log.v(TAG,textureObjectIds.toString());
+        // Set the clear color to black
+        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1);   
+        
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+     
 	}
 	
-	public void SetupText()
-	{
+	public void SetupText(int textureUnitIndex, TextureShaderProgram program) 	{
 		// Create our text manager
-		tm = new TextManager();
-		
-		// Tell our text manager to use index 1 of textures loaded
-		tm.setTextureID(1);
+		tm = new TextManager(program);
+	
+		tm.setTextureUnitIndex(textureUnitIndex);
 		
 		// Pass the uniform scale
 		tm.setUniformscale(ssu);
 		
 		// Create our new textobject
-		TextObject txt = new TextObject("hello world", mTextX, mTextY);
+		TextObject txt = new TextObject("hello vorld", mTextX, mTextY);
 		
 		// Add it to our manager
 		tm.addText(txt);
@@ -255,7 +274,18 @@ public class GLRenderer implements Renderer {
 		// Prepare the text for rendering
 		tm.PrepareDraw();
 	}
-	
+
+	// Misha's ugly hack: 
+	public void UpdateText() 	    {
+
+	    TextObject txt = new TextObject("hello vorld", mTextX, mTextY);
+
+	    tm.updateText(txt);
+
+	    // Prepare the text for rendering
+	    tm.PrepareDraw();
+	}
+	   
 	public void SetupScaling()
 	{
 		// The screen resolutions
@@ -306,7 +336,7 @@ public class GLRenderer implements Renderer {
 	    if (mTextY < 0) { // clamp min
 	        mTextY = 0;
 	    }
-	    SetupText();
+	    UpdateText(); // TODO : Yuk! why the '1' here?
 	}
 
 	/*
@@ -358,39 +388,7 @@ public class GLRenderer implements Renderer {
 		uvBuffer.put(uvs);
 		uvBuffer.position(0);
 		
-		// Generate Textures, if more needed, alter these numbers.
-		int[] texturenames = new int[2];
-		GLES20.glGenTextures(2, texturenames, 0);
-		
-		// Retrieve our image from resources.
-		int id = mContext.getResources().getIdentifier("drawable/textureatlas", null, mContext.getPackageName());
-		
-		// Temporary create a bitmap
-		Bitmap bmp = BitmapFactory.decodeResource(mContext.getResources(), id);
-		
-		// Bind texture to texturename
-		GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texturenames[0]);
-		
-		// Set filtering
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        
-        // Load the bitmap into the bound texture.
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
-        
-        // We are done using the bitmap so we should recycle it.
-		bmp.recycle();
-		
-		// Again for the text texture
-		id = mContext.getResources().getIdentifier("drawable/font", null, mContext.getPackageName());
-		bmp = BitmapFactory.decodeResource(mContext.getResources(), id);
-		GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + 1);
-		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texturenames[1]);
-		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
-        bmp.recycle();
+
 	}
 	
 	public void SetupTriangle()

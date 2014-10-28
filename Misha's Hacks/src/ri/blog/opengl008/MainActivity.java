@@ -1,7 +1,7 @@
 package ri.blog.opengl008;
 
 
-import com.airhockey.android.AirHockeyRenderer;
+//import com.airhockey.android.AirHockeyRenderer;
 
 import android.opengl.GLSurfaceView;
 import android.os.Build;
@@ -76,8 +76,8 @@ public class MainActivity extends Activity {
                 // Convert touch coordinates into normalized device
                 // coordinates, keeping in mind that Android's Y
                 // coordinates are inverted.
-                final float normalizedX =  (eventX / (float) v.getWidth()) * 2 - 1;
-                final float normalizedY =  -((eventY / (float) v.getHeight()) * 2 - 1);
+            //    final float normalizedX =  (eventX / (float) v.getWidth()) * 2 - 1;
+             //   final float normalizedY =  -((eventY / (float) v.getHeight()) * 2 - 1);
 
                 
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {

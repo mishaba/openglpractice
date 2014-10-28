@@ -13,6 +13,7 @@ import static android.opengl.GLES20.GL_LINEAR_MIPMAP_LINEAR;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
+import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glDeleteTextures;
 import static android.opengl.GLES20.glGenTextures;
@@ -35,7 +36,7 @@ public class TextureHelper {
      * @param resourceId
      * @return
      */
-    public static int loadTexture(Context context, int resourceId) {
+    public static int loadTexture(Context context, int resourceId, int textureUnitEnum) {
         final int[] textureObjectIds = new int[1];
         glGenTextures(1, textureObjectIds, 0);
 
@@ -64,17 +65,17 @@ public class TextureHelper {
 
             return 0;
         } 
+        // The Activate may not be necessary, since we're just loading the bitmap in. But let's put 
+        // it in just to be safe for now.
         
+        glActiveTexture(textureUnitEnum);
         // Bind to the texture in OpenGL
         glBindTexture(GL_TEXTURE_2D, textureObjectIds[0]);
 
         // Set filtering: a default must be set, or the texture will be
         // black.
-        glTexParameteri(GL_TEXTURE_2D,
-            GL_TEXTURE_MIN_FILTER,
-            GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D,
-            GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         // Load the bitmap into the bound texture.
         texImage2D(GL_TEXTURE_2D, 0, bitmap, 0);
 

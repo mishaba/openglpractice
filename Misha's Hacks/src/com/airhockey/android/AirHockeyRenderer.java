@@ -179,9 +179,11 @@ public class AirHockeyRenderer implements Renderer {
     private float clamp(float value, float min, float max) {
         return Math.min(max, Math.max(value, min));
     }
-
+   
     @Override
+  
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
+        /*
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);        
         
         table = new Table();
@@ -195,7 +197,8 @@ public class AirHockeyRenderer implements Renderer {
         textureProgram = new TextureShaderProgram(context);
         colorProgram = new ColorShaderProgram(context);
 
-       /* texture = TextureHelper.loadTexture(context, R.drawable.air_hockey_surface); */
+        texture = TextureHelper.loadTexture(context, R.drawable.air_hockey_surface); 
+        */
     }
 
     @Override

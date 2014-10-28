@@ -5,16 +5,18 @@ import android.opengl.GLES20;
 public class riGraphicTools {
 
 	// Program variables
+    /*
 	public static int sp_SolidColor;
 	public static int sp_Image;
 	public static int sp_Text;
-	
+	*/
 	
 	/* SHADER Solid
 	 * 
 	 * This shader is for rendering a colored primitive.
 	 * 
 	 */
+	/*
 	public static final String vs_SolidColor =
 		"uniform 	mat4 		uMVPMatrix;" +
 		"attribute 	vec4 		vPosition;" +
@@ -27,6 +29,7 @@ public class riGraphicTools {
 	    "void main() {" +
 	    "  gl_FragColor = vec4(0.5,0,0,1);" +
 	    "}"; 
+	*/
 	
 	/* SHADER Image
 	 * 
@@ -88,7 +91,7 @@ public class riGraphicTools {
 	
 	*/
 	
-	
+	/*
 	public static int loadShader(int type, String shaderCode){
 
 	    // create a vertex shader type (GLES20.GL_VERTEX_SHADER)
@@ -102,4 +105,5 @@ public class riGraphicTools {
 	    // return the shader
 	    return shader;
 	}
+	*/
 }
