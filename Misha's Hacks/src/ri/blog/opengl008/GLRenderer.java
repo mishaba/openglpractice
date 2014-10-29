@@ -22,6 +22,7 @@ import android.view.MotionEvent;
 
 import com.airhockey.android.util.LoggerConfig;
 import com.airhockey.android.util.TextResourceReader;
+import com.airhockey.android.util.TextureHelper;
 import com.airhockey.android.programs.TextureShaderProgram;
 
 import static android.opengl.GLES20.GL_TEXTURE0;
@@ -33,7 +34,6 @@ import static android.opengl.GLES20.glGetAttribLocation;
 import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniformMatrix4fv;
-
 import android.util.Log;
 
 
@@ -147,7 +147,7 @@ public class GLRenderer implements Renderer {
         int mSamplerLoc = GLES20.glGetUniformLocation (mImageProgram.program, "s_texture" );
         
         // Set the sampler texture unit to 0, where we have saved the texture.
-        GLES20.glUniform1i ( mSamplerLoc, 0);
+        GLES20.glUniform1i ( mSamplerLoc, mImageProgram.mTextureUnitIndex);
 
         // Draw the triangle
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, indices.length, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
@@ -211,14 +211,27 @@ public class GLRenderer implements Renderer {
         SetupTriangle();
         // Create the image information
         SetupImage();
+        
         // Generate Textures, if more needed, alter these numbers.
         int[] textureObjectIds = new int[2];
-        GLES20.glGenTextures(2, textureObjectIds, 0);
+        if (false) {
+               GLES20.glGenTextures(2, textureObjectIds, 0);
+        }
         
         // Retrieve our image from resources.
-        int id = mContext.getResources().getIdentifier("drawable/textureatlas", null, mContext.getPackageName());
+        int id = mContext.getResources().getIdentifier("drawable/textureatlas", 
+                null, mContext.getPackageName());
+        int  idText = mContext.getResources().getIdentifier("drawable/font",
+            null, mContext.getPackageName());
+        
+        Log.w(TAG,"HELLO!");
+        int textureImage = TextureHelper.loadTexture(mContext, id, GL_TEXTURE0); 
+        int textureText = TextureHelper.loadTexture(mContext, idText, GL_TEXTURE1);  
+        
         
         // Temporary create a bitmap
+        if (false)
+        {
         Bitmap bmp = BitmapFactory.decodeResource(mContext.getResources(), id);
         
         // Bind texture to texturename
@@ -234,16 +247,17 @@ public class GLRenderer implements Renderer {
         
         // We are done using the bitmap so we should recycle it.
         bmp.recycle();
-        
+        }
+        if (false) {
         // Again for the text texture
-        id = mContext.getResources().getIdentifier("drawable/font", null, mContext.getPackageName());
-        bmp = BitmapFactory.decodeResource(mContext.getResources(), id);
+        Bitmap bmp = BitmapFactory.decodeResource(mContext.getResources(), idText);
         GLES20.glActiveTexture(mText2DProgram.mTextureUnitEnum); // Uses 2nd texture unit
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureObjectIds[1]);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
         bmp.recycle();
+        }
         
         // Create our texts
         SetupText(mText2DProgram); 
@@ -256,17 +270,17 @@ public class GLRenderer implements Renderer {
      
 	}
 	
-	public void SetupText(int textureUnitIndex, TextureShaderProgram program) 	{
+	public void SetupText(TextureShaderProgram program) 	{
 		// Create our text manager
 		tm = new TextManager(program);
 	
-		tm.setTextureUnitIndex(textureUnitIndex);
+	//	tm.setTextureUnitIndex(program.mTextureUnitIndex); // fix to just reference internally
 		
 		// Pass the uniform scale
 		tm.setUniformscale(ssu);
 		
 		// Create our new textobject
-		TextObject txt = new TextObject("hello vorld", mTextX, mTextY);
+		TextObject txt = new TextObject("hello HayaA", mTextX, mTextY);
 		
 		// Add it to our manager
 		tm.addText(txt);
@@ -278,7 +292,7 @@ public class GLRenderer implements Renderer {
 	// Misha's ugly hack: 
 	public void UpdateText() 	    {
 
-	    TextObject txt = new TextObject("hello vorld", mTextX, mTextY);
+	    TextObject txt = new TextObject("hello HayaB", mTextX, mTextY);
 
 	    tm.updateText(txt);
 

@@ -33,7 +33,7 @@ public class TextManager {
 	private int index_colors;
 
 	// Index of the texture unit to use for rendering
-	private int textureUnitIndex;
+	// private int textureUnitIndex;
 	
 	private float uniformscale;
 	
@@ -63,7 +63,7 @@ public class TextManager {
 		indices = new short[10];
 		
 		// init as 0 as default
-		textureUnitIndex = 0;
+		// textureUnitIndex = 0;
 		mProgram = program;
 	}
 	
@@ -78,12 +78,12 @@ public class TextManager {
 	    txtcollection = new Vector<TextObject>();
 	    txtcollection.add(obj);
 	}
-
+/*
 	public void setTextureUnitIndex(int val)
 	{
 		textureUnitIndex = val;
 	}
-	
+	*/
 	
 	public void AddCharRenderInformation(float[] vec, float[] cs, float[] uv, short[] indi)
 	{
@@ -244,7 +244,7 @@ public class TextManager {
         int mSamplerLoc = GLES20.glGetUniformLocation (mProgram.program, "s_texture" );
         
         // Set the sampler texture unit to our selected id
-	    GLES20.glUniform1i ( mSamplerLoc, textureUnitIndex); // THIS WAS A HIDDEN BUG! THis refers to the texture UNIT index
+	    GLES20.glUniform1i ( mSamplerLoc, mProgram.mTextureUnitIndex); // THIS WAS A HIDDEN BUG! THis refers to the texture UNIT index
 
         // Draw the triangle
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, indices.length, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);

@@ -38,6 +38,7 @@ public class TextureHelper {
      */
     public static int loadTexture(Context context, int resourceId, int textureUnitEnum) {
         final int[] textureObjectIds = new int[1];
+        Log.w(TAG,"HELLO, loadTexture");
         glGenTextures(1, textureObjectIds, 0);
 
         if (textureObjectIds[0] == 0) {
@@ -74,7 +75,7 @@ public class TextureHelper {
 
         // Set filtering: a default must be set, or the texture will be
         // black.
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // was mipmap
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         // Load the bitmap into the bound texture.
         texImage2D(GL_TEXTURE_2D, 0, bitmap, 0);
@@ -87,15 +88,16 @@ public class TextureHelper {
         // square. It will look the same because of texture coordinates,
         // and mipmap generation will work.
 
-        glGenerateMipmap(GL_TEXTURE_2D);
+       // glGenerateMipmap(GL_TEXTURE_2D);
 
         // Recycle the bitmap, since its data has been loaded into
         // OpenGL.
         bitmap.recycle();
 
-        // Unbind from the texture.
-        glBindTexture(GL_TEXTURE_2D, 0);
+        // Unbind from the texture. Had to comment since it BROKE
+     //   glBindTexture(GL_TEXTURE_2D, 0);
 
+        Log.w(TAG,"Texture generated: "+textureObjectIds[0]);
         return textureObjectIds[0];        
     }
 }
