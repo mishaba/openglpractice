@@ -36,22 +36,20 @@ import com.airhockey.android.programs.TextureShaderProgram;
 public class MusicSheet {            
     private static final int POSITION_COMPONENT_COUNT = 2;
     private static final int TEXTURE_COORDINATES_COMPONENT_COUNT = 2;
-    private static final int STRIDE = (POSITION_COMPONENT_COUNT 
-        + TEXTURE_COORDINATES_COMPONENT_COUNT) * BYTES_PER_FLOAT;
+    private static final int TOTAL_COMPONENT_COUNT = POSITION_COMPONENT_COUNT+TEXTURE_COORDINATES_COMPONENT_COUNT;
+    private static final int STRIDE = TOTAL_COMPONENT_COUNT * BYTES_PER_FLOAT;
 
     
     private static final int VERTICES_PER_GLYPH  = 4;
-   // private static final int DIMS_PER_VERTEX  = 3;
     private static final int TRIANGLES_PER_GLYPH  = 2;
     // private  final float[] VERTEX_DATA;
-    // Order of coordinates: X, Y, S, T
+    // Order of coordinates: X, Y, U, V
 
     public static float vertices[];
     public static short indices[];
-    public static float uvs[];
     public FloatBuffer vertexBuffer;
-    public ShortBuffer drawListBuffer;
-    public FloatBuffer uvBuffer;
+    public ShortBuffer indexBuffer;
+
     private static final String TAG = "MusicSheet";
 
     private static int numGlyphs = 0;
@@ -91,23 +89,31 @@ public class MusicSheet {
     // 2: lower right
     // 3: upper right
     
-    private void AddGlyph(int x, int y, float ssu) {
-         int index = numGlyphs * VERTICES_PER_GLYPH * POSITION_COMPONENT_COUNT;
+    private void AddGlyph(int x, int y, float ssu, float llu, float llv, float uDist, float vDist) {
+         int index = numGlyphs * VERTICES_PER_GLYPH * TOTAL_COMPONENT_COUNT;
          
-         final float glyphHeight = 20f;
-         final float glyphWidth = 10f;
+         final float glyphHeight = 30f;
+         final float glyphWidth = 30f;
          
          vertices[index++] = x;
          vertices[index++] = y + (glyphHeight*ssu);
-     
+         vertices[index++] = llu;
+         vertices[index++] = llv;
+         
          vertices[index++] = x;
          vertices[index++] = y;
-  
-         vertices[index++] = x + (glyphWidth*ssu);
-         vertices[index++] = y;
+         vertices[index++] = llu;
+         vertices[index++] = llv + uDist;
          
          vertices[index++] = x + (glyphWidth*ssu);
+         vertices[index++] = y;
+         vertices[index++] = llu + uDist;
+         vertices[index++]= llv + vDist;
+       
+         vertices[index++] = x + (glyphWidth*ssu);
          vertices[index++] = y + (glyphHeight*ssu);
+         vertices[index++] = llu + uDist;
+         vertices[index++] = llv;  
          
          numGlyphs++;
       }
@@ -118,14 +124,18 @@ public class MusicSheet {
         Random rnd = new Random();
 
         // Our collection of vertices
-        vertices = new float[nPoints*VERTICES_PER_GLYPH*POSITION_COMPONENT_COUNT];
+        vertices = new float[nPoints*VERTICES_PER_GLYPH*TOTAL_COMPONENT_COUNT];
 
         // Create the vertex data
         for(int i=0;i<nPoints;i++)         {
             int offset_x = rnd.nextInt((int)swp);
             int offset_y = rnd.nextInt((int)shp);
 
-            AddGlyph(offset_x, offset_y, ssu);
+            float llu = rnd.nextInt(2) * 0.5f;
+            float llv = rnd.nextInt(2) * 0.5f;
+  
+            
+            AddGlyph(offset_x, offset_y, ssu, llu, llv, 0.5f, 0.5f);
         }
 
         // The indices for all textured quads
@@ -156,42 +166,10 @@ public class MusicSheet {
         // initialize byte buffer for the draw list
         ByteBuffer dlb = ByteBuffer.allocateDirect(indices.length * BYTES_PER_SHORT);
         dlb.order(ByteOrder.nativeOrder());
-        drawListBuffer = dlb.asShortBuffer();
-        drawListBuffer.put(indices);
-        drawListBuffer.position(0);
+        indexBuffer = dlb.asShortBuffer();
+        indexBuffer.put(indices);
+        indexBuffer.position(0);
 
-
-        // We will use a randomizer for randomizing the textures from texture atlas.
-        // This is strictly optional as it only effects the output of our app,
-        // Not the actual knowledge.
-        //   Random rnd = new Random();
-
-        // nPoints imageobjects times 4 vertices times (u and v)
-        uvs = new float[nPoints*4*2];
-
-        // We will make nPoints randomly textures objects
-        for(int i=0; i<nPoints; i++)         {
-            int random_u_offset = rnd.nextInt(2);
-            int random_v_offset = rnd.nextInt(2);
-
-            // Adding the UV's using the offsets
-            uvs[(i*8) + 0] = random_u_offset * 0.5f;
-            uvs[(i*8) + 1] = random_v_offset * 0.5f;
-            uvs[(i*8) + 2] = random_u_offset * 0.5f;
-            uvs[(i*8) + 3] = (random_v_offset+1) * 0.5f;
-            uvs[(i*8) + 4] = (random_u_offset+1) * 0.5f;
-            uvs[(i*8) + 5] = (random_v_offset+1) * 0.5f;
-            uvs[(i*8) + 6] = (random_u_offset+1) * 0.5f;
-            uvs[(i*8) + 7] = random_v_offset * 0.5f;    
-        }
-
-        // The texture buffer
-
-        ByteBuffer bb2 = ByteBuffer.allocateDirect(uvs.length * BYTES_PER_FLOAT);
-        bb2.order(ByteOrder.nativeOrder());
-        uvBuffer = bb2.asFloatBuffer();
-        uvBuffer.put(uvs);
-        uvBuffer.position(0);
     }
 
     public void Draw(float[] m, TextureShaderProgram mImageProgram) {
@@ -204,12 +182,14 @@ public class MusicSheet {
 
         // get handle to vertex shader's aPosition member and add vertices
         int mPositionHandle = mImageProgram.getPositionAttributeLocation();
-        glVertexAttribPointer(mPositionHandle, POSITION_COMPONENT_COUNT, GL_FLOAT, false, 0, vertexBuffer);
+        vertexBuffer.position(0);
+        glVertexAttribPointer(mPositionHandle, POSITION_COMPONENT_COUNT, GL_FLOAT, false, STRIDE, vertexBuffer);
         glEnableVertexAttribArray(mPositionHandle);
-
+     
         // Get handle to texture coordinates location and load the texture uvs
         int mTexCoordLoc = mImageProgram.getTextureCoordinatesAttributeLocation();
-        glVertexAttribPointer ( mTexCoordLoc, 2, GL_FLOAT, false, 0, uvBuffer);
+        vertexBuffer.position(POSITION_COMPONENT_COUNT); // start at UV coordinates
+        glVertexAttribPointer ( mTexCoordLoc, TEXTURE_COORDINATES_COMPONENT_COUNT, GL_FLOAT, false, STRIDE, vertexBuffer);
         glEnableVertexAttribArray ( mTexCoordLoc );
 
         // Get handle to shape's transformation matrix and add our matrix
@@ -223,7 +203,7 @@ public class MusicSheet {
         glUniform1i ( mSamplerLoc, mImageProgram.mTextureUnitIndex);
 
         // Draw the triangle
-        glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_SHORT, drawListBuffer);
+        glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_SHORT, indexBuffer);
 
         // Disable vertex array
         glDisableVertexAttribArray(mPositionHandle);
