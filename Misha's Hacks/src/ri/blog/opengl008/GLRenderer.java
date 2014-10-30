@@ -1,10 +1,10 @@
 package ri.blog.opengl008;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
-import java.util.Random;
+import static android.opengl.GLES20.GL_BLEND;
+import static android.opengl.GLES20.GL_ONE;
+import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
+import static android.opengl.GLES20.GL_TEXTURE0;
+import static android.opengl.GLES20.GL_TEXTURE1;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -13,26 +13,10 @@ import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView.Renderer;
 import android.opengl.Matrix;
-import com.airhockey.android.util.TextureHelper;
-import com.airhockey.android.programs.TextureShaderProgram;
-
-import static android.opengl.GLES20.GL_TEXTURE0;
-import static android.opengl.GLES20.GL_TEXTURE1;
-import static android.opengl.GLES20.glUniform1i;
-import static android.opengl.GLES20.glUniformMatrix4fv;
-import static android.opengl.GLES20.glVertexAttribPointer;
-import static android.opengl.GLES20.glEnableVertexAttribArray;
-import static android.opengl.GLES20.glDisableVertexAttribArray;
-import static android.opengl.GLES20.glDrawElements;
-import static android.opengl.GLES20.GL_FLOAT;
-import static android.opengl.GLES20.GL_UNSIGNED_SHORT;
-import static android.opengl.GLES20.GL_TRIANGLES;
-
-import static android.opengl.GLES20.GL_BLEND;
-import static android.opengl.GLES20.GL_ONE;
-import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
-
 import android.util.Log;
+
+import com.airhockey.android.programs.TextureShaderProgram;
+import com.airhockey.android.util.TextureHelper;
 
 
 public class GLRenderer implements Renderer {
@@ -42,14 +26,9 @@ public class GLRenderer implements Renderer {
     private final float[] mtrxView = new float[16];
     private final float[] mtrxProjectionAndView = new float[16];
 
-    // Geometric variables
-    public static float vertices[];
-    public static short indices[];
-    public static float uvs[];
-    public FloatBuffer vertexBuffer;
-    public ShortBuffer drawListBuffer;
-    public FloatBuffer uvBuffer;
-
+    
+    public MusicSheet musicsheet;
+    
     public TextManager tm;
     // Our screenresolution
     float	mScreenWidth = 1280;
@@ -77,10 +56,15 @@ public class GLRenderer implements Renderer {
     TextureShaderProgram mImageProgram;
     TextureShaderProgram mText2DProgram;
 
+    long countElapsed = 0;
+    long totalElapsed = 0;
 
     public GLRenderer(Context c)
     {
         mContext = c;
+   
+        
+        musicsheet = new MusicSheet();
         mLastTime = System.currentTimeMillis() + 100;
     }
 
@@ -97,7 +81,7 @@ public class GLRenderer implements Renderer {
 
     @Override
     public void onDrawFrame(GL10 unused) {
-
+       
         // Get the current time
         long now = System.currentTimeMillis();
 
@@ -114,48 +98,23 @@ public class GLRenderer implements Renderer {
         Render(mtrxProjectionAndView);
 
         // Render the text
+        /*
         if(tm!=null)
             tm.Draw(mtrxProjectionAndView);
-
+*/
         // Save the current time to see how long it took :).
         mLastTime = now;
-
+        
+        countElapsed++;
+        totalElapsed+= elapsed;
+        
+        Log.w(TAG,"Elapsed "+elapsed + " Average: "+(totalElapsed/countElapsed));
     }
 
     private void Render(float[] m) {
 
-        mImageProgram.useProgram();
-
-        // clear Screen and Depth Buffer, we have set the clear color as black.
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-        // get handle to vertex shader's aPosition member and add vertices
-        int mPositionHandle = mImageProgram.getPositionAttributeLocation();
-        glVertexAttribPointer(mPositionHandle, 3, GL_FLOAT, false, 0, vertexBuffer);
-        glEnableVertexAttribArray(mPositionHandle);
-
-        // Get handle to texture coordinates location and load the texture uvs
-        int mTexCoordLoc = mImageProgram.getTextureCoordinatesAttributeLocation();
-        glVertexAttribPointer ( mTexCoordLoc, 2, GL_FLOAT, false, 0, uvBuffer);
-        glEnableVertexAttribArray ( mTexCoordLoc );
-
-        // Get handle to shape's transformation matrix and add our matrix
-        int mtrxhandle = mImageProgram.getMatrixUniformLocation();
-        glUniformMatrix4fv(mtrxhandle, 1, false, m, 0);
-
-        // Get handle to textures locations
-        int mSamplerLoc = mImageProgram.getTextureUnitUniformLocation();
-
-        // Set the sampler texture unit to 0, where we have saved the texture.
-        glUniform1i ( mSamplerLoc, mImageProgram.mTextureUnitIndex);
-
-        // Draw the triangle
-        glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_SHORT, drawListBuffer);
-
-        // Disable vertex array
-        glDisableVertexAttribArray(mPositionHandle);
-        glDisableVertexAttribArray(mTexCoordLoc);
+        musicsheet.Draw(m, mImageProgram);
+  
 
     }
 
@@ -188,11 +147,13 @@ public class GLRenderer implements Renderer {
 
         // Setup our scaling system
         SetupScaling();
+        
+        mLastTime = System.currentTimeMillis() + 100;
     }
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-
+Log.w(TAG,"on Surface Created");
 
         mImageProgram = new TextureShaderProgram(mContext,
             R.raw.image_vertex_shader, R.raw.image_fragment_shader,
@@ -209,9 +170,7 @@ public class GLRenderer implements Renderer {
         // Setup our scaling system
         SetupScaling();
         // Create the triangles
-        SetupTriangle();
-        // Create the image information
-        SetupImage();
+        musicsheet.Setup(10000, swp, shp, ssu);
 
 
         // Retrieve our image from resources.
@@ -232,7 +191,7 @@ public class GLRenderer implements Renderer {
 
         GLES20.glEnable(GL_BLEND);
         GLES20.glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
+Log.w(TAG,"Done on SurfaceCreated");
     }
 
     public void SetupText(TextureShaderProgram program) 	{
@@ -271,7 +230,7 @@ public class GLRenderer implements Renderer {
 
         // Orientation is assumed portrait
         ssx = swp / xAppRes;
-        ssy = shp / xAppRes;
+        ssy = shp / yAppRes;
 
         // Get our uniform scaler
         if(ssx > ssy)
@@ -318,102 +277,5 @@ public class GLRenderer implements Renderer {
 
 
 
-    public void SetupImage()
-    {
-        // We will use a randomizer for randomizing the textures from texture atlas.
-        // This is strictly optional as it only effects the output of our app,
-        // Not the actual knowledge.
-        Random rnd = new Random();
 
-        // 30 imageobjects times 4 vertices times (u and v)
-        uvs = new float[30*4*2];
-
-        // We will make 30 randomly textures objects
-        for(int i=0; i<30; i++) 		{
-            int random_u_offset = rnd.nextInt(2);
-            int random_v_offset = rnd.nextInt(2);
-
-            // Adding the UV's using the offsets
-            uvs[(i*8) + 0] = random_u_offset * 0.5f;
-            uvs[(i*8) + 1] = random_v_offset * 0.5f;
-            uvs[(i*8) + 2] = random_u_offset * 0.5f;
-            uvs[(i*8) + 3] = (random_v_offset+1) * 0.5f;
-            uvs[(i*8) + 4] = (random_u_offset+1) * 0.5f;
-            uvs[(i*8) + 5] = (random_v_offset+1) * 0.5f;
-            uvs[(i*8) + 6] = (random_u_offset+1) * 0.5f;
-            uvs[(i*8) + 7] = random_v_offset * 0.5f;	
-        }
-
-        // The texture buffer
-        ByteBuffer bb = ByteBuffer.allocateDirect(uvs.length * 4);
-        bb.order(ByteOrder.nativeOrder());
-        uvBuffer = bb.asFloatBuffer();
-        uvBuffer.put(uvs);
-        uvBuffer.position(0);
-
-
-    }
-
-    public void SetupTriangle()
-    {
-        // We will need a randomizer
-        Random rnd = new Random();
-
-        // Our collection of vertices
-        vertices = new float[30*4*3];
-
-        // Create the vertex data
-        for(int i=0;i<30;i++)
-        {
-            int offset_x = rnd.nextInt((int)swp);
-            int offset_y = rnd.nextInt((int)shp);
-
-            // Create the 2D parts of our 3D vertices, others are default 0.0f
-            vertices[(i*12) + 0] = offset_x;
-            vertices[(i*12) + 1] = offset_y + (30.0f*ssu);
-            vertices[(i*12) + 2] = 0f;
-            vertices[(i*12) + 3] = offset_x;
-            vertices[(i*12) + 4] = offset_y;
-            vertices[(i*12) + 5] = 0f;
-            vertices[(i*12) + 6] = offset_x + (30.0f*ssu);
-            vertices[(i*12) + 7] = offset_y;
-            vertices[(i*12) + 8] = 0f;
-            vertices[(i*12) + 9] = offset_x + (30.0f*ssu);
-            vertices[(i*12) + 10] = offset_y + (30.0f*ssu);
-            vertices[(i*12) + 11] = 0f;
-        }
-
-        // The indices for all textured quads
-        indices = new short[30*6]; 
-        int last = 0;
-        for(int i=0;i<30;i++)
-        {
-            // We need to set the new indices for the new quad
-            indices[(i*6) + 0] = (short) (last + 0);
-            indices[(i*6) + 1] = (short) (last + 1);
-            indices[(i*6) + 2] = (short) (last + 2);
-            indices[(i*6) + 3] = (short) (last + 0);
-            indices[(i*6) + 4] = (short) (last + 2);
-            indices[(i*6) + 5] = (short) (last + 3);
-
-            // Our indices are connected to the vertices so we need to keep them
-            // in the correct order.
-            // normal quad = 0,1,2,0,2,3 so the next one will be 4,5,6,4,6,7
-            last = last + 4;
-        }
-
-        // The vertex buffer.
-        ByteBuffer bb = ByteBuffer.allocateDirect(vertices.length * 4);
-        bb.order(ByteOrder.nativeOrder());
-        vertexBuffer = bb.asFloatBuffer();
-        vertexBuffer.put(vertices);
-        vertexBuffer.position(0);
-
-        // initialize byte buffer for the draw list
-        ByteBuffer dlb = ByteBuffer.allocateDirect(indices.length * 2);
-        dlb.order(ByteOrder.nativeOrder());
-        drawListBuffer = dlb.asShortBuffer();
-        drawListBuffer.put(indices);
-        drawListBuffer.position(0);
-    }
 }

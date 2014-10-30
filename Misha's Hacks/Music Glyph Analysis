@@ -1,0 +1,19 @@
+Analysis: to use vector indices or not.
+
+
+Case 1: Vertices only
+
+6 vertices rectangle, 4 floats per vertex (inc texture coord), 4 bytes/float => 84 bytes
+
+Case 2: Index
+
+4 vertices/rectangl, 4 floats/vertex, 4 bytes/float = 64 bytes
+6 indices /rect , 2 bytes/index = 12 bytes
+
+Total: 76 bytes.
+
+Index solution is marginally more space efficient, although probably slightly more
+time inefficient due to the indexing overhead. On the other hand, indexing is probably
+very fast.
+
+Let's go with the indexing solution.
