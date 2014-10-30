@@ -13,7 +13,6 @@ import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glUniform4f;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import android.content.Context;
-import ri.blog.opengl008.R;
 
 //import com.airhockey.android.R;
 
@@ -24,7 +23,7 @@ public class ColorShaderProgram extends ShaderProgram {
     
     // Attribute locations
     private final int aPositionLocation;
-
+/*
     public ColorShaderProgram(Context context) {
         super(context, R.raw.simple_vertex_shader,
             R.raw.simple_fragment_shader);
@@ -36,7 +35,7 @@ public class ColorShaderProgram extends ShaderProgram {
         // Retrieve attribute locations for the shader program.
         aPositionLocation = glGetAttribLocation(program, A_POSITION);
     }
-
+*/
     private ColorShaderProgram(Context context, int idVertex, int idFragment) {
         super(context, idVertex, idFragment);
 

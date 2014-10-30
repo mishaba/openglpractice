@@ -15,13 +15,14 @@ import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.opengl.GLES20;
+
 import android.opengl.GLUtils;
 import android.opengl.GLSurfaceView.Renderer;
 import android.opengl.Matrix;
 import android.view.MotionEvent;
 
+
 import com.airhockey.android.util.LoggerConfig;
-import com.airhockey.android.util.TextResourceReader;
 import com.airhockey.android.util.TextureHelper;
 import com.airhockey.android.programs.TextureShaderProgram;
 
@@ -34,6 +35,18 @@ import static android.opengl.GLES20.glGetAttribLocation;
 import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniformMatrix4fv;
+import static android.opengl.GLES20.glVertexAttribPointer;
+import static android.opengl.GLES20.glEnableVertexAttribArray;
+import static android.opengl.GLES20.glDisableVertexAttribArray;
+import static android.opengl.GLES20.glDrawElements;
+
+import static android.opengl.GLES20.GL_FLOAT;
+import static android.opengl.GLES20.GL_UNSIGNED_SHORT;
+
+import static android.opengl.GLES20.GL_TRIANGLES;
+
+
+
 import android.util.Log;
 
 
@@ -122,39 +135,38 @@ public class GLRenderer implements Renderer {
 	
 	private void Render(float[] m) {
 		
-		// GLES20.glUseProgram(mImageProgram.program);
 		 mImageProgram.useProgram();
 		 
 		// clear Screen and Depth Buffer, we have set the clear color as black.
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         
-        // get handle to vertex shader's vPosition member and add vertices
-	    int mPositionHandle = GLES20.glGetAttribLocation(mImageProgram.program, "vPosition");
-	    GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer);
-	    GLES20.glEnableVertexAttribArray(mPositionHandle);
+        // get handle to vertex shader's aPosition member and add vertices
+	    int mPositionHandle = mImageProgram.getPositionAttributeLocation();
+	    glVertexAttribPointer(mPositionHandle, 3, GL_FLOAT, false, 0, vertexBuffer);
+	    glEnableVertexAttribArray(mPositionHandle);
 	    
 	    // Get handle to texture coordinates location and load the texture uvs
-	    int mTexCoordLoc = GLES20.glGetAttribLocation(mImageProgram.program, "a_texCoord" );
-	    GLES20.glVertexAttribPointer ( mTexCoordLoc, 2, GLES20.GL_FLOAT, false, 0, uvBuffer);
-	    GLES20.glEnableVertexAttribArray ( mTexCoordLoc );
+	    int mTexCoordLoc = mImageProgram.getTextureCoordinatesAttributeLocation();
+	    glVertexAttribPointer ( mTexCoordLoc, 2, GL_FLOAT, false, 0, uvBuffer);
+	    glEnableVertexAttribArray ( mTexCoordLoc );
 	    
 	    // Get handle to shape's transformation matrix and add our matrix
-        int mtrxhandle = GLES20.glGetUniformLocation(mImageProgram.program, "uMVPMatrix");
-        GLES20.glUniformMatrix4fv(mtrxhandle, 1, false, m, 0);
+        int mtrxhandle = mImageProgram.getMatrixUniformLocation();
+        glUniformMatrix4fv(mtrxhandle, 1, false, m, 0);
         
         // Get handle to textures locations
-        int mSamplerLoc = GLES20.glGetUniformLocation (mImageProgram.program, "s_texture" );
+        int mSamplerLoc = mImageProgram.getTextureUnitUniformLocation();
         
         // Set the sampler texture unit to 0, where we have saved the texture.
-        GLES20.glUniform1i ( mSamplerLoc, mImageProgram.mTextureUnitIndex);
+        glUniform1i ( mSamplerLoc, mImageProgram.mTextureUnitIndex);
 
         // Draw the triangle
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, indices.length, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
+        glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_SHORT, drawListBuffer);
 
         // Disable vertex array
-        GLES20.glDisableVertexAttribArray(mPositionHandle);
-        GLES20.glDisableVertexAttribArray(mTexCoordLoc);
+        glDisableVertexAttribArray(mPositionHandle);
+        glDisableVertexAttribArray(mTexCoordLoc);
         	
 	}
 	
@@ -212,56 +224,20 @@ public class GLRenderer implements Renderer {
         // Create the image information
         SetupImage();
         
-        // Generate Textures, if more needed, alter these numbers.
-        int[] textureObjectIds = new int[2];
-        if (false) {
-               GLES20.glGenTextures(2, textureObjectIds, 0);
-        }
-        
+          
         // Retrieve our image from resources.
         int id = mContext.getResources().getIdentifier("drawable/textureatlas", 
                 null, mContext.getPackageName());
         int  idText = mContext.getResources().getIdentifier("drawable/font",
             null, mContext.getPackageName());
         
-        Log.w(TAG,"HELLO!");
         int textureImage = TextureHelper.loadTexture(mContext, id, GL_TEXTURE0); 
         int textureText = TextureHelper.loadTexture(mContext, idText, GL_TEXTURE1);  
-        
-        
-        // Temporary create a bitmap
-        if (false)
-        {
-        Bitmap bmp = BitmapFactory.decodeResource(mContext.getResources(), id);
-        
-        // Bind texture to texturename
-        GLES20.glActiveTexture(mImageProgram.mTextureUnitEnum);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureObjectIds[0]);
-        
-        // Set filtering
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        
-        // Load the bitmap into the bound texture.
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
-        
-        // We are done using the bitmap so we should recycle it.
-        bmp.recycle();
-        }
-        if (false) {
-        // Again for the text texture
-        Bitmap bmp = BitmapFactory.decodeResource(mContext.getResources(), idText);
-        GLES20.glActiveTexture(mText2DProgram.mTextureUnitEnum); // Uses 2nd texture unit
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureObjectIds[1]);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
-        bmp.recycle();
-        }
+           
         
         // Create our texts
         SetupText(mText2DProgram); 
-        Log.v(TAG,textureObjectIds.toString());
+   
         // Set the clear color to black
         GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1);   
         
@@ -273,14 +249,12 @@ public class GLRenderer implements Renderer {
 	public void SetupText(TextureShaderProgram program) 	{
 		// Create our text manager
 		tm = new TextManager(program);
-	
-	//	tm.setTextureUnitIndex(program.mTextureUnitIndex); // fix to just reference internally
-		
+			
 		// Pass the uniform scale
 		tm.setUniformscale(ssu);
 		
 		// Create our new textobject
-		TextObject txt = new TextObject("hello HayaA", mTextX, mTextY);
+		TextObject txt = new TextObject("hello AshHB", mTextX, mTextY);
 		
 		// Add it to our manager
 		tm.addText(txt);
@@ -292,7 +266,7 @@ public class GLRenderer implements Renderer {
 	// Misha's ugly hack: 
 	public void UpdateText() 	    {
 
-	    TextObject txt = new TextObject("hello HayaB", mTextX, mTextY);
+	    TextObject txt = new TextObject("hello AshHA", mTextX, mTextY);
 
 	    tm.updateText(txt);
 
@@ -350,7 +324,7 @@ public class GLRenderer implements Renderer {
 	    if (mTextY < 0) { // clamp min
 	        mTextY = 0;
 	    }
-	    UpdateText(); // TODO : Yuk! why the '1' here?
+	    UpdateText(); 
 	}
 
 	/*

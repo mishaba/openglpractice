@@ -11,6 +11,19 @@ import com.airhockey.android.programs.TextureShaderProgram;
 
 import android.opengl.GLES20;
 
+import static android.opengl.GLES20.glUniform1i;
+import static android.opengl.GLES20.glUniformMatrix4fv;
+import static android.opengl.GLES20.glVertexAttribPointer;
+import static android.opengl.GLES20.glEnableVertexAttribArray;
+import static android.opengl.GLES20.glDisableVertexAttribArray;
+import static android.opengl.GLES20.glDrawElements;
+
+import static android.opengl.GLES20.GL_FLOAT;
+import static android.opengl.GLES20.GL_UNSIGNED_SHORT;
+
+import static android.opengl.GLES20.GL_TRIANGLES;
+
+
 public class TextManager {
 	
 	private static final float RI_TEXT_UV_BOX_WIDTH = 0.125f;
@@ -94,29 +107,25 @@ public class TextManager {
 		short base = (short) (index_vecs / 3);
 			
 		// We should add the vec, translating the indices to our saved vector
-		for(int i=0;i<vec.length;i++)
-		{
+		for(int i=0;i<vec.length;i++)		{
 			vecs[index_vecs] = vec[i];
 			index_vecs++;
 		}
 		
 		// We should add the colors, so we can use the same texture for multiple effects.
-		for(int i=0;i<cs.length;i++)
-		{
+		for(int i=0;i<cs.length;i++) 		{
 			colors[index_colors] = cs[i];
 			index_colors++;
 		}
 		
 		// We should add the uvs
-		for(int i=0;i<uv.length;i++)
-		{
+		for(int i=0;i<uv.length;i++) 		{
 			uvs[index_uvs] = uv[i];
 			index_uvs++;
 		}
 
 		// We handle the indices
-		for(int j=0;j<indi.length;j++)
-		{
+		for(int j=0;j<indi.length;j++) 		{
 			indices[index_indices] = (short) (base + indi[j]);
 			index_indices++;
 		}
@@ -133,10 +142,8 @@ public class TextManager {
 		// Get the total amount of characters
 		int charcount = 0;
 		for (TextObject txt : txtcollection) {
-			if(txt!=null)
-			{
-				if(!(txt.text==null))
-				{
+			if(txt!=null) {
+				if(!(txt.text==null)) 				{
 					charcount += txt.text.length(); 
 				}
 			}
@@ -163,13 +170,12 @@ public class TextManager {
 	    // Using the iterator protects for problems with concurrency
 	    for( Iterator< TextObject > it = txtcollection.iterator(); it.hasNext() ; ) 	    {
 	        TextObject txt = it.next();
-	        if(txt!=null) 			{
-	            if(!(txt.text==null)) 				{
-	                convertTextToTriangleInfo(txt);
-	            }
+	        if(txt!=null && txt.text !=null)	{
+	            convertTextToTriangleInfo(txt);
 	        }
 	    }
 	}
+
 	
 	public void Draw(float[] m)
 	{
@@ -205,54 +211,48 @@ public class TextManager {
 		drawListBuffer.position(0);
 		
 		// get handle to vertex shader's vPosition member
-	    int mPositionHandle = GLES20.glGetAttribLocation(mProgram.program, "vPosition");
+	    int mPositionHandle = mProgram.getPositionAttributeLocation();
 	    
 	    // Enable a handle to the triangle vertices
-	    GLES20.glEnableVertexAttribArray(mPositionHandle);
+	    glEnableVertexAttribArray(mPositionHandle);
 	 
 	    // Prepare the background coordinate data
-	    GLES20.glVertexAttribPointer(mPositionHandle, 3,
-	                                 GLES20.GL_FLOAT, false,
-	                                 0, vertexBuffer);
+	    glVertexAttribPointer(mPositionHandle, 3,GL_FLOAT, false,0, vertexBuffer);
+	    glEnableVertexAttribArray ( mPositionHandle );
 	    
-	    int mTexCoordLoc = GLES20.glGetAttribLocation(mProgram.program, "a_texCoord" );
+	    int mTexCoordLoc = mProgram.getTextureCoordinatesAttributeLocation();
 	    
 	    // Prepare the texturecoordinates
-	    GLES20.glVertexAttribPointer ( mTexCoordLoc, 2, GLES20.GL_FLOAT,
-                false, 
-                0, textureBuffer);
+	    glVertexAttribPointer ( mTexCoordLoc, 2, GL_FLOAT, false,0, textureBuffer);
+        glEnableVertexAttribArray ( mTexCoordLoc );
 
-	    GLES20.glEnableVertexAttribArray ( mPositionHandle );
-        GLES20.glEnableVertexAttribArray ( mTexCoordLoc );
-
-        int mColorHandle = GLES20.glGetAttribLocation(mProgram.program, "a_Color");
+        int mColorHandle = mProgram.getColorAttributeLocation();
+ 
 
 	    // Enable a handle to the triangle vertices
-	    GLES20.glEnableVertexAttribArray(mColorHandle);
+	    glEnableVertexAttribArray(mColorHandle);
 
 	    // Prepare the background coordinate data
-	    GLES20.glVertexAttribPointer(mColorHandle, 4,
-	                                 GLES20.GL_FLOAT, false,
-	                                 0, colorBuffer);
+	    glVertexAttribPointer(mColorHandle, 4,GL_FLOAT, false, 0, colorBuffer);
 
 	    // get handle to shape's transformation matrix
-        int mtrxhandle = GLES20.glGetUniformLocation(mProgram.program, "uMVPMatrix");
+        int mtrxhandle = mProgram.getMatrixUniformLocation();
         
     	// Apply the projection and view transformation
-        GLES20.glUniformMatrix4fv(mtrxhandle, 1, false, m, 0);
+        glUniformMatrix4fv(mtrxhandle, 1, false, m, 0);
         
-        int mSamplerLoc = GLES20.glGetUniformLocation (mProgram.program, "s_texture" );
+        int mSamplerLoc = mProgram.getTextureUnitUniformLocation();
         
         // Set the sampler texture unit to our selected id
-	    GLES20.glUniform1i ( mSamplerLoc, mProgram.mTextureUnitIndex); // THIS WAS A HIDDEN BUG! THis refers to the texture UNIT index
+	    glUniform1i ( mSamplerLoc, mProgram.mTextureUnitIndex); // THIS WAS A HIDDEN BUG! THis refers to the texture UNIT index
 
         // Draw the triangle
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, indices.length, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
+        glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_SHORT, drawListBuffer);
 
         // Disable vertex array
-        GLES20.glDisableVertexAttribArray(mPositionHandle);
-        GLES20.glDisableVertexAttribArray(mTexCoordLoc);
-        GLES20.glDisableVertexAttribArray(mColorHandle);
+        glDisableVertexAttribArray(mPositionHandle);
+        glDisableVertexAttribArray(mTexCoordLoc);
+        glDisableVertexAttribArray(mColorHandle);
 	
 	}
 	

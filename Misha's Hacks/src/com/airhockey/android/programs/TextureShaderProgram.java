@@ -29,6 +29,13 @@ import android.content.Context;
  * 
  * But it does take care of the huge mismatch between texture unit ENUMs as required by glActiveTexture
  *  and texture unit INDEXes as required by glUniform 
+ *  
+ *  
+ *  NOTE: some programs may not have these variables, in which case the returned values 
+ *  will be -1, which means not found.
+ *  That's OK, the calling code shouldn't be asking for program variables 
+ *  that it doesn't know about.
+ *  Error reporting code could be added to the getter functions.
  */
 
 public class TextureShaderProgram extends ShaderProgram {
@@ -39,6 +46,7 @@ public class TextureShaderProgram extends ShaderProgram {
     // Attribute locations
     private final int aPositionLocation;
     private final int aTextureCoordinatesLocation;
+    private final int aColorLocation;
     
     // Texture Unit IDs
     
@@ -55,6 +63,7 @@ public class TextureShaderProgram extends ShaderProgram {
         // Retrieve attribute locations for the shader program.
         aPositionLocation = glGetAttribLocation(program, A_POSITION);
         aTextureCoordinatesLocation = glGetAttribLocation(program, A_TEXTURE_COORDINATES);
+        aColorLocation = glGetAttribLocation(program, A_COLOR);
         
         // Save the texture unit information
         mTextureUnitEnum = textureUnitEnum;
@@ -83,5 +92,20 @@ public class TextureShaderProgram extends ShaderProgram {
 
     public int getTextureCoordinatesAttributeLocation() {
         return aTextureCoordinatesLocation;
+    }
+    
+    public int getMatrixUniformLocation() {
+        return uMatrixLocation;
+    }
+
+
+    public int getTextureUnitUniformLocation() {
+        return uTextureUnitLocation;
+  
+    }
+
+
+    public int getColorAttributeLocation() {
+      return aColorLocation;
     }
 }
