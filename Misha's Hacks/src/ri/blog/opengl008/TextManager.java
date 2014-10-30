@@ -142,12 +142,11 @@ public class TextManager {
 		// Get the total amount of characters
 		int charcount = 0;
 		for (TextObject txt : txtcollection) {
-			if(txt!=null) {
-				if(!(txt.text==null)) 				{
-					charcount += txt.text.length(); 
-				}
-			}
+		    if(txt!=null && txt.text !=null) 	{
+		        charcount += txt.text.length(); 
+		    }
 		}
+	
 		
 		// Create the arrays we need with the correct size.
 		vecs = null;
@@ -176,6 +175,7 @@ public class TextManager {
 	    }
 	}
 
+	// YUK, this allocates memory during EVERY draw cycle. What a waste.
 	
 	public void Draw(float[] m)
 	{
