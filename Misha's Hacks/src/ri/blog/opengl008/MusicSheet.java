@@ -41,7 +41,7 @@ public class MusicSheet {
 
     
     private static final int VERTICES_PER_GLYPH  = 4;
-    private static final int DIMS_PER_VERTEX  = 3;
+   // private static final int DIMS_PER_VERTEX  = 3;
     private static final int TRIANGLES_PER_GLYPH  = 2;
     // private  final float[] VERTEX_DATA;
     // Order of coordinates: X, Y, S, T
@@ -92,36 +92,33 @@ public class MusicSheet {
     // 3: upper right
     
     private void AddGlyph(int x, int y, float ssu) {
-         int index = numGlyphs * VERTICES_PER_GLYPH * DIMS_PER_VERTEX;
-         numGlyphs++;
+         int index = numGlyphs * VERTICES_PER_GLYPH * POSITION_COMPONENT_COUNT;
+         
          final float glyphHeight = 20f;
          final float glyphWidth = 10f;
          
-         vertices[index + 0] = x;
-         vertices[index + 1] = y + (glyphHeight*ssu);
-         vertices[index + 2] = 0f;
+         vertices[index++] = x;
+         vertices[index++] = y + (glyphHeight*ssu);
+     
+         vertices[index++] = x;
+         vertices[index++] = y;
+  
+         vertices[index++] = x + (glyphWidth*ssu);
+         vertices[index++] = y;
          
-         vertices[index + 3] = x;
-         vertices[index + 4] = y;
-         vertices[index + 5] = 0f;
+         vertices[index++] = x + (glyphWidth*ssu);
+         vertices[index++] = y + (glyphHeight*ssu);
          
-         vertices[index + 6] = x + (glyphWidth*ssu);
-         vertices[index + 7] = y;
-         vertices[index + 8] = 0f;
-         
-         vertices[index + 9] = x + (glyphWidth*ssu);
-         vertices[index + 10] = y + (glyphHeight*ssu);
-         vertices[index + 11] = 0f;
+         numGlyphs++;
       }
   
     public void Setup(int nPoints, float swp, float shp, float ssu)
     {
-        Log.w(TAG,"Setup Entry");
-        // We will need a randomizer
+         // We will need a randomizer
         Random rnd = new Random();
 
         // Our collection of vertices
-        vertices = new float[nPoints*VERTICES_PER_GLYPH*DIMS_PER_VERTEX];
+        vertices = new float[nPoints*VERTICES_PER_GLYPH*POSITION_COMPONENT_COUNT];
 
         // Create the vertex data
         for(int i=0;i<nPoints;i++)         {
@@ -207,7 +204,7 @@ public class MusicSheet {
 
         // get handle to vertex shader's aPosition member and add vertices
         int mPositionHandle = mImageProgram.getPositionAttributeLocation();
-        glVertexAttribPointer(mPositionHandle, 3, GL_FLOAT, false, 0, vertexBuffer);
+        glVertexAttribPointer(mPositionHandle, POSITION_COMPONENT_COUNT, GL_FLOAT, false, 0, vertexBuffer);
         glEnableVertexAttribArray(mPositionHandle);
 
         // Get handle to texture coordinates location and load the texture uvs
