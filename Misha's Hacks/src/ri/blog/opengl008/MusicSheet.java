@@ -19,7 +19,7 @@ import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glVertexAttribPointer;
 import static com.airhockey.android.Constants.BYTES_PER_FLOAT;
-
+import static com.airhockey.android.Constants.BYTES_PER_SHORT;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -39,6 +39,10 @@ public class MusicSheet {
     private static final int STRIDE = (POSITION_COMPONENT_COUNT 
         + TEXTURE_COORDINATES_COMPONENT_COUNT) * BYTES_PER_FLOAT;
 
+    
+    private static final int VERTICES_PER_GLYPH  = 4;
+    private static final int DIMS_PER_VERTEX  = 3;
+    private static final int TRIANGLES_PER_GLYPH  = 2;
     // private  final float[] VERTEX_DATA;
     // Order of coordinates: X, Y, S, T
 
@@ -50,6 +54,7 @@ public class MusicSheet {
     public FloatBuffer uvBuffer;
     private static final String TAG = "MusicSheet";
 
+    private static int numGlyphs = 0;
 
     //   private final VertexArray vertexArray;
 
@@ -77,7 +82,38 @@ public class MusicSheet {
         glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
     }    
      */
-
+    // operate in device space
+    // add a glyph to the internal vertices array. Glyph is composed of two triangles
+    //
+    // 4 points:
+    // 0: upper left
+    // 1: lower left
+    // 2: lower right
+    // 3: upper right
+    
+    private void AddGlyph(int x, int y, float ssu) {
+         int index = numGlyphs * VERTICES_PER_GLYPH * DIMS_PER_VERTEX;
+         numGlyphs++;
+         final float glyphHeight = 20f;
+         final float glyphWidth = 10f;
+         
+         vertices[index + 0] = x;
+         vertices[index + 1] = y + (glyphHeight*ssu);
+         vertices[index + 2] = 0f;
+         
+         vertices[index + 3] = x;
+         vertices[index + 4] = y;
+         vertices[index + 5] = 0f;
+         
+         vertices[index + 6] = x + (glyphWidth*ssu);
+         vertices[index + 7] = y;
+         vertices[index + 8] = 0f;
+         
+         vertices[index + 9] = x + (glyphWidth*ssu);
+         vertices[index + 10] = y + (glyphHeight*ssu);
+         vertices[index + 11] = 0f;
+      }
+  
     public void Setup(int nPoints, float swp, float shp, float ssu)
     {
         Log.w(TAG,"Setup Entry");
@@ -85,30 +121,18 @@ public class MusicSheet {
         Random rnd = new Random();
 
         // Our collection of vertices
-        vertices = new float[nPoints*4*3];
+        vertices = new float[nPoints*VERTICES_PER_GLYPH*DIMS_PER_VERTEX];
 
         // Create the vertex data
         for(int i=0;i<nPoints;i++)         {
             int offset_x = rnd.nextInt((int)swp);
             int offset_y = rnd.nextInt((int)shp);
 
-            // Create the 2D parts of our 3D vertices, others are default 0.0f
-            vertices[(i*12) + 0] = offset_x;
-            vertices[(i*12) + 1] = offset_y + (30.0f*ssu);
-            vertices[(i*12) + 2] = 0f;
-            vertices[(i*12) + 3] = offset_x;
-            vertices[(i*12) + 4] = offset_y;
-            vertices[(i*12) + 5] = 0f;
-            vertices[(i*12) + 6] = offset_x + (30.0f*ssu);
-            vertices[(i*12) + 7] = offset_y;
-            vertices[(i*12) + 8] = 0f;
-            vertices[(i*12) + 9] = offset_x + (30.0f*ssu);
-            vertices[(i*12) + 10] = offset_y + (30.0f*ssu);
-            vertices[(i*12) + 11] = 0f;
+            AddGlyph(offset_x, offset_y, ssu);
         }
 
         // The indices for all textured quads
-        indices = new short[nPoints*6]; 
+        indices = new short[nPoints*3*TRIANGLES_PER_GLYPH]; 
         int last = 0;
         for(int i=0;i<nPoints;i++)         {
             // We need to set the new indices for the new quad
@@ -126,14 +150,14 @@ public class MusicSheet {
         }
 
         // The vertex buffer.
-        ByteBuffer bb = ByteBuffer.allocateDirect(vertices.length * 4);
+        ByteBuffer bb = ByteBuffer.allocateDirect(vertices.length * BYTES_PER_FLOAT);
         bb.order(ByteOrder.nativeOrder());
         vertexBuffer = bb.asFloatBuffer();
         vertexBuffer.put(vertices);
         vertexBuffer.position(0);
 
         // initialize byte buffer for the draw list
-        ByteBuffer dlb = ByteBuffer.allocateDirect(indices.length * 2);
+        ByteBuffer dlb = ByteBuffer.allocateDirect(indices.length * BYTES_PER_SHORT);
         dlb.order(ByteOrder.nativeOrder());
         drawListBuffer = dlb.asShortBuffer();
         drawListBuffer.put(indices);
@@ -166,7 +190,7 @@ public class MusicSheet {
 
         // The texture buffer
 
-        ByteBuffer bb2 = ByteBuffer.allocateDirect(uvs.length * 4);
+        ByteBuffer bb2 = ByteBuffer.allocateDirect(uvs.length * BYTES_PER_FLOAT);
         bb2.order(ByteOrder.nativeOrder());
         uvBuffer = bb2.asFloatBuffer();
         uvBuffer.put(uvs);

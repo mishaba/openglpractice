@@ -237,6 +237,7 @@ Log.w(TAG,"Done on SurfaceCreated");
             ssu = ssy;
         else
             ssu = ssx;
+        Log.w(TAG,"SSX:"+ssx+" SSY:"+ssy+" SWP:"+swp+" SHP:"+shp);
     }
     public void handleTouchPress(float eventX, float eventY) {
 
